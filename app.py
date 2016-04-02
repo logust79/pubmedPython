@@ -298,9 +298,6 @@ def pubmedbatch_main():
         },
     }
     '''
-    '''
-    require change
-    '''
     user = session.get('user') or app.config['DEFAULT_USER']
 
     db = get_db('pubmedbatch')
@@ -338,9 +335,6 @@ delete a folder in pubmedbatch
 @app.route('/pubmedbatch_folderdel/<folder>', methods=['POST'])
 #@requires_auth
 def pubmedbatch_delfolder(folder):
-    '''
-    require change
-    '''
     user = session.get('user') or app.config['DEFAULT_USER']
 
     db = get_db('pubmedbatch')
@@ -360,8 +354,6 @@ main business
 #@requires_auth
 def pubmedbatch(folder):
     # This is the main business
-    '''require change
-    '''
     user = session.get('user') or app.config['DEFAULT_USER']
     db = get_db('pubmedbatch')
     if request.method == 'POST':
