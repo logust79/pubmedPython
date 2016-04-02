@@ -399,7 +399,6 @@ delete_data = function(){
 function checkProgress(name, displayCallback) {
 		$.getJSON('/pubmedbatch_progress_bar/' + rid, function(data) {
 			displayCallback(data);
-			console.log(data)
 			if ( data.status == 'done' ) {
 				$('#progressbar').removeClass('progress-striped active');
 				$('#table-content').show();
@@ -429,7 +428,6 @@ $('input[name="csv_upload"]').change(function(){
 
 $('#submit').click(function(e){
 	e.preventDefault();
-	console.log('posting')
 	$('#table-content').empty();
 	if($(":file").val() == '' || $('#column').val() == '' || ($('#and').val() == '' && $('#or').val() == '') || $('#email').val() == ''){
 			alert("All fields (except for 'Genes to hightlight' and 'Genes to mask') must be supplied");
@@ -479,9 +477,9 @@ $('#submit').click(function(e){
 		//Ajax events
 		success: completeHandler = function(data) {
 			// data[0] are titles, data[1] is the array of data. data[2] is the file name
-			//show submit button
+			//show submit button\
 			$('#submit').show(); 
-			data = $.parseJSON(data);
+			data = $.parseJSON(data)
 			displayPubmedTable(data);
 			
 			//update side list

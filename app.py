@@ -16,7 +16,6 @@ from flask_errormail import mail_on_500
 from flask import Response
 from collections import defaultdict, Counter
 from werkzeug.contrib.cache import SimpleCache
-import codecs
 from multiprocessing import Process
 import glob
 import sqlite3
@@ -257,6 +256,7 @@ def scrutinise(obj):
                     'score': score
                 })
                 results['total_score'] = results['total_score'] + score
+    results['results'] = sorted(results['results'], key=lambda k: k['score'], reverse=True)
     return results
 
 def get_pred_score(obj):
@@ -369,7 +369,7 @@ def pubmedbatch(folder):
         ##########################################################
         # get form data
         #########################################################
-        column = int(request.form['column'])
+        column = int(request.form['column']) - 1
         Entrez.email = request.form['email']
         AND_term = request.form['AND']
         OR_term = request.form['OR']
@@ -557,7 +557,7 @@ def pubmedbatch(folder):
         user_folders = db.results.find_one({
             'user_id': user},{'_id': 0})['folder']
         # get AND an OR field
-        AND = session.get('AND')
+        AND = session.get('AND') or ''
         OR = session.get('OR') or app.config['PUBMEDBATCH_OR']
         EMAIL = session.get('EMAIL') or app.config['PUBMED_EMAIL']
         #user_folders = user_folders['folder']
