@@ -371,7 +371,8 @@ def pubmedbatch(folder):
         session['AND'] = AND_term
         session['OR'] = OR_term
         session['EMAIL'] = request.form['email']
-
+        session['COLUMN'] = column + 1
+        
         csv_file = request.files['csv_upload']
         file_name = csv_file.filename
         known_genes = request.files['known_genes'] or ''
@@ -552,6 +553,7 @@ def pubmedbatch(folder):
         AND = session.get('AND') or ''
         OR = session.get('OR') or app.config['PUBMEDBATCH_OR']
         EMAIL = session.get('EMAIL') or app.config['PUBMED_EMAIL']
+        COLUMN = session.get('COLUMN') or '4'
         #user_folders = user_folders['folder']
         if folder not in user_folders:
             return "Error: " + folder + " does not exist!"
@@ -564,7 +566,9 @@ def pubmedbatch(folder):
             folder = folder,
             AND = AND,
             OR = OR,
-            EMAIL = EMAIL)
+            EMAIL = EMAIL,
+            COLUMN = COLUMN
+        )
 
 
 @app.route('/pubmedbatch_rename/<folder>', methods=['POST'])
