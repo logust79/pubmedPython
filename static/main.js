@@ -78,13 +78,16 @@ function displayPubmedTable(data) {
         .attr('class', 'list-title')
         .style('overflow', 'hidden')
         .style('text-overlow', 'ellipsis')
-        .text(function(d) {return d});
-        $('th').each(function(){
-                $(this).prepend('<div class="some-handle"></div>');
+        .text(function(d) {
+        	d = d.replace(/&#46;/g, '.');
+        	return d;
         });
-        
-        var results = data[1];
-        results.sort(sortPubmed);
+	$('th').each(function(){
+			$(this).prepend('<div class="some-handle"></div>');
+	});
+	
+	var results = data[1];
+	results.sort(sortPubmed);
         
         // create table body
     var tr = table.append('tbody')
