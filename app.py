@@ -235,7 +235,7 @@ def scrutinise(obj):
             abstract = ''
             if abstract_list:
                 for a in abstract_list:
-                    if hasattr(a, 'attributes'):
+                    if hasattr(a, 'attributes') and 'Label' in a.attributes:
                         abstract = abstract + '<b>' + a.attributes['Label'] + ': </b>'
                         abstract = abstract + a + '<br/>'
                     else:

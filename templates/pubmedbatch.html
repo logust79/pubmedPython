@@ -399,6 +399,7 @@ delete_data = function(){
 function checkProgress(name, displayCallback) {
 		$.getJSON('/pubmedbatch_progress_bar/' + rid, function(data) {
 			displayCallback(data);
+			console.log(data);
 			if ( data.status == 'done' ) {
 				$('#progressbar').removeClass('progress-striped active');
 				$('#table-content').show();
@@ -478,6 +479,10 @@ $('#submit').click(function(e){
 		success: completeHandler = function(data) {
 			// data[0] are titles, data[1] is the array of data. data[2] is the file name
 			//show submit button\
+			$('#progress-text').hide('slow');
+						$('#progressbar').hide('slow');
+						$('.progress-bar').width(0 + '%');
+						$('#progress-text').html('');
 			$('#submit').show(); 
 			data = $.parseJSON(data)
 			displayPubmedTable(data);
