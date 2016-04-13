@@ -220,7 +220,7 @@ function displayPubmedTable(data) {
 	$('#tablehead-div').show();
 	
 	//populate old-name field for renaming
-	$('#old-name').val(data[2]);
+	$('#old-name').val(data[3]);
 	
 	//popover
 	$("[data-toggle='popover']").popover({html:true});

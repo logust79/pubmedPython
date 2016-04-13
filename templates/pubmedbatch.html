@@ -120,25 +120,28 @@
 			  border-radius: 50%;
 			}
 			div#progressbar, #tablehead-div {
-					margin-top: 15px;
-					margin-bottom: 10px;
-					display: none;
+				margin-top: 15px;
+				margin-bottom: 10px;
+				display: none;
 			}
 			#progress-text {
-					margin-top: 10px;
+				margin-top: 10px;
 			}
 			#tablehead-div {
-					margin-top: 15px;
-					margin-bottom: 15px;
+				margin-top: 15px;
+				margin-bottom: 15px;
 			}
 			@media (min-width: 768px) and (max-width: 991px) {
-					.blank {
-							height: 50px;
-					}
+				.blank {
+						height: 50px;
+				}
 			}
 			table th {
-					background-color: rgb(240,240,240);
-					font-size: 80%;
+				background-color: rgb(240,240,240);
+				font-size: 80%;
+			}
+			#search-term {
+				display: hide;
 			}
 		</style>
     </head>
@@ -276,6 +279,7 @@
 							<button class='btn btn-success' type="submit" id='rename-submit' class="btn btn-default">Rename record</button> 
 						</form>
 					</div>
+					<p id='search-term'></p>
 					<div id='table-content'></div>
 				</div>
 			</div>
@@ -430,6 +434,9 @@ $('input[name="csv_upload"]').change(function(){
 $('#submit').click(function(e){
 	e.preventDefault();
 	$('#table-content').empty();
+	// hide the search term
+	$('#search-term').hide();
+	$('#search-term').html('');
 	if($(":file").val() == '' || $('#column').val() == '' || ($('#and').val() == '' && $('#or').val() == '') || $('#email').val() == ''){
 			alert("All fields (except for 'Genes to hightlight' and 'Genes to mask') must be supplied");
 			return false;
@@ -477,7 +484,8 @@ $('#submit').click(function(e){
 		
 		//Ajax events
 		success: completeHandler = function(data) {
-			// data[0] are titles, data[1] is the array of data. data[2] is the file name
+			// data[0] are titles, data[1] is the array of data. 
+			// data[2] is the search term, data[3] is the file name
 			//show submit button\
 			$('#progress-text').hide('slow');
 						$('#progressbar').hide('slow');
@@ -485,11 +493,17 @@ $('#submit').click(function(e){
 						$('#progress-text').html('');
 			$('#submit').show(); 
 			data = $.parseJSON(data)
+			
+			// show the search term
+			$('#search-term').html('<b>Search term: </b>' + data[2]);
+			$('#search-term').show();
+			
+			// show the table
 			displayPubmedTable(data);
 			
 			//update side list
 			$('#side-list').append("<li><button class='btn btn-xs btn-danger del' type='button' style='position:absolute;margin-top:8px;z-index:1000;'>x</button><a class='saved-data-list' href='#'  title = " +
-				data[2] + ">" + data[2] + "</a></li>");
+				data[3] + ">" + data[3] + "</a></li>");
 			save_data();rename_data();delete_data();
 		},
 		error: errorHandler = function(jqXHR, textStatus, errorThrown) {
