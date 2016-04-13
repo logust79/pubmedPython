@@ -369,7 +369,11 @@ save_data = function(){
 					//show submit button
 					$('#submit').show(); 
 					data = $.parseJSON(data);
-					//console.log(data[1]);
+					// show the search term
+					$('#search-term').html('<b>Search term: </b>' + data[2]);
+					$('#search-term').show();
+					
+					// display the data
 					displayPubmedTable(data);
 				
 					//highlight selection
