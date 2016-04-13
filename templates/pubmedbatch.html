@@ -81,7 +81,7 @@
 			  background-color: #428bca;
 			}
 			.mini {
-					font-size: 10px;
+				font-size: 10px;
 			}
 
 			/*
@@ -120,25 +120,34 @@
 			  border-radius: 50%;
 			}
 			div#progressbar, #tablehead-div {
-					margin-top: 15px;
-					margin-bottom: 10px;
-					display: none;
+				margin-top: 15px;
+				margin-bottom: 10px;
+				display: none;
 			}
 			#progress-text {
-					margin-top: 10px;
+				margin-top: 10px;
 			}
 			#tablehead-div {
-					margin-top: 15px;
-					margin-bottom: 15px;
+				margin-top: 15px;
+				margin-bottom: 15px;
 			}
 			@media (min-width: 768px) and (max-width: 991px) {
-					.blank {
-							height: 50px;
-					}
+				.blank {
+						height: 50px;
+				}
 			}
 			table th {
-					background-color: rgb(240,240,240);
-					font-size: 80%;
+				background-color: rgb(240,240,240);
+				font-size: 80%;
+			}
+			.retnet-mode {
+				color: red;
+				font-family: "Comic Sans MS", cursive, sans-serif;
+				background-color: #F0F0F0;
+			}
+			hr {
+				line-height: 2px;
+				margin: 4px;
 			}
 		</style>
     </head>
@@ -399,7 +408,6 @@ delete_data = function(){
 function checkProgress(name, displayCallback) {
 		$.getJSON('/pubmedbatch_progress_bar/' + rid, function(data) {
 			displayCallback(data);
-			console.log(data);
 			if ( data.status == 'done' ) {
 				$('#progressbar').removeClass('progress-striped active');
 				$('#table-content').show();

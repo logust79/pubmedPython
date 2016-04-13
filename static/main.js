@@ -186,7 +186,6 @@ function displayPubmedTable(data) {
 				return '';
 			}
         })
-        //.style('white-space', 'nowrap')
         .attr('title', function(d, i){ 
 			if (titles[i] == 'Samples' || titles[i] == 'HUGO' || titles[i] == 'Func' || titles[i] == 'ExonicFunc' || titles[i] == 'Description' || titles[i] == 'AAChange' || titles[i] == 'Gene' || titles[i] == 'Start' || titles[i] == 'End'){
 				return d;
@@ -211,6 +210,32 @@ function displayPubmedTable(data) {
 				return '<button type="button" class="btn btn-' + col + ' del-row">Del row</button> ';
 			} else if (titles[i] == 'ref(pubmedID)'){
 				return d.results;
+			} else if (titles[i] == 'HUGO'){
+				// add hyperlink if retnet
+				var pData = d3.select(this.parentNode).datum();
+				if ('disease' in pData['ref(pubmedID)']){
+					var return_string = "<span class='pop pointer' data-toggle='popover' title='<a href="
+							+ '"https://sph.uth.edu/Retnet/disease.htm" target="_blank" >' 
+							+ 'A RetNet gene'
+							+ "</a>' data-content='";
+					if (pData['ref(pubmedID)'].omim){
+						// add omim
+						return_string += '<p style="color:black;margin-bottom:0"><b>OMIM:</b> ';
+						pData['ref(pubmedID)'].omim.map(function(o){
+							return_string += '<a href="http://omim.org/entry/' + o + '">'
+								+ o + '</a> ';
+						});
+					}
+					return_string += '</p><hr/><p style="color:black;margin-top:0"><b>Disease:</b><br />'
+						+ pData['ref(pubmedID)'].disease
+						+ "</p>'>" + '<span class="retnet-mode"><b>'
+						+ pData['ref(pubmedID)'].mode.toUpperCase()
+						+ '</b></span>' + d + '</span>';
+					return return_string;
+				} else {
+					return d;
+				}
+				
 			} else {
 				return d;
 			}

@@ -51,7 +51,11 @@ app.config.from_object(__name__)
 sess=Session()
 sess.init_app(app)
 
-#progressbar
+# read RetNet file
+retnet_f = 'retnet.json'
+RETNET = json.load(open(retnet_f, 'r'))
+
+# progressbar
 '''
 {
     'random_p_id':{
@@ -515,6 +519,23 @@ def pubmedbatch(folder):
                 else:
                     # known genes?
                     genes[gene_name]['known'] = 1 if gene_name in known_genes else 0
+                    # give the rest a minimal score to keep them on the list
+                    genes[gene_name]['total_score'] = max(1, genes[gene_name]['total_score'])
+                    # Retnet?
+                    if gene_name in RETNET:
+                        genes[gene_name]['disease'] = RETNET[gene_name]['disease']
+                        genes[gene_name]['omim'] = RETNET[gene_name]['omim']
+                        genes[gene_name]['mode'] = RETNET[gene_name]['mode']
+                        # reassign total score according to mode
+                        if RETNET[gene_name]['mode'] == 'd' or RETNET[gene_name]['mode'] == 'x':
+                            genes[gene_name]['total_score'] = max(100, genes[gene_name]['total_score'])
+                        elif re.search(r'/(?!dominant)/', AND_term):
+                            # not searching doimant, also assign others to 100
+                            genes[gene_name]['total_score'] = max(100, genes[gene_name]['total_score'])
+                        else:
+                            # give the rest a minimal score to keep them on the list
+                            genes[gene_name]['total_score'] = max(1, genes[gene_name]['total_score'])
+                    
                     # add pubmed result
                     row[column+1:column+1] = [genes[gene_name], genes[gene_name]['total_score']]
                     # add a placeholder for pred_score
