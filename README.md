@@ -1,4 +1,4 @@
-pubmedBatch in Python
+pubmedBatch in Python (IRDC branch)
 ==============================
 Send your searches in batch against Pubmed!
 
@@ -40,6 +40,12 @@ Features
 * You can provide a blacklist to skip genes.
 * You can use the files in the *testfile* folder to play with the app.
 * One caveat of the app is, deleting row won't delete it in the actual data. 
+
+IRDC features
+-------------
+* It refers to [RetNet](https://sph.uth.edu/Retnet/) to mark genes as **D** for *dominant*, **R** for *recessive*, **X** for *X-linked*, **M** for *mitochondrion* and **U** for *unknown*.
+* Click on the marked genes will pop disease details and available OMIM links.
+* In the `scraper` folder, `scrape_RetNet.py` can scrape the content of [RetNet](https://sph.uth.edu/Retnet/disease.htm) and store it in JSON format.
 
 Future work
 -----------

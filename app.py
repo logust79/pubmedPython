@@ -518,9 +518,12 @@ def pubmedbatch(folder):
                     continue
                 else:
                     # known genes?
-                    genes[gene_name]['known'] = 1 if gene_name in known_genes else 0
-                    # give the rest a minimal score to keep them on the list
-                    genes[gene_name]['total_score'] = max(1, genes[gene_name]['total_score'])
+                    if gene_name in known_genes:
+                        genes[gene_name]['known'] = 1
+                        # give the rest a minimal score to keep them on the list
+                        genes[gene_name]['total_score'] = max(1, genes[gene_name]['total_score'])
+                    else:
+                        genes[gene_name]['known'] = 0
                     # Retnet?
                     if gene_name in RETNET:
                         genes[gene_name]['disease'] = RETNET[gene_name]['disease']
@@ -557,14 +560,16 @@ def pubmedbatch(folder):
         while file_name in files:
             num += 1
             file_name = re.sub(r'(\(\d+\))?$', '(%s)' % num, file_name)
-
+    
+        # get the search term, to display
+        search_term = 'AND[ <b>%s</b> ]; OR[ <b>%s</b> ]' % (', '.join(AND), ', '.join(OR))
         # write to database and win
-        final_result = [header, output]
+        final_result = [header, output, search_term]
         the_file = 'folder.' + folder + '.' + file_name
         db.results.update({'user_id': user}, {
             "$set": {the_file: final_result}
         })
-        return json.dumps([header, output, file_name])
+        return json.dumps([header, output, search_term, file_name])
     else:
         # get. display page
         # First see if folder exists. if not, return error
