@@ -429,6 +429,8 @@ def pubmedbatch(folder):
         row_num = -1
         header = [] # header
         output = [] # all the results get pushed here
+        genes={} # storing
+        
         for row in csvreader:
             row_num += 1
             # read header
@@ -451,7 +453,6 @@ def pubmedbatch(folder):
             # update progress bar
             update_progress_bar({'id':progress_id, 'message': '%s;' % gene_name})
 
-            genes={} # storing 
             print gene_name
             smashed_all = gene_name + smashed_term
             ####################################################
