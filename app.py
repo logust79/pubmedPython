@@ -30,7 +30,7 @@ from urlparse import urlparse
 import pickle
 import re
 import xml.etree.ElementTree as xml
-
+import shutil
 from flask.ext.session import Session
 
 logging.getLogger().addHandler(logging.StreamHandler())
@@ -114,6 +114,19 @@ def update_progress_bar(obj):
     if PROGRESS_BAR[obj['id']]['count'] == PROGRESS_BAR[obj['id']]['total']:
         PROGRESS_BAR[obj['id']]['status'] = 'done'
 
+'''
+get immediate sub-directories
+'''
+def get_immediate_subdirectories(a_dir):
+    return [name for name in os.listdir(a_dir)
+            if os.path.isdir(os.path.join(a_dir, name))]
+
+'''
+get all files in directory
+'''
+def get_all_files(a_dir):
+    onlyfiles = [f for f in os.listdir(a_dir) if os.path.isfile(os.path.join(a_dir, f))]
+    return onlyfiles
 '''
 kill a progress
 '''
@@ -303,34 +316,35 @@ def pubmedbatch_main():
     }
     '''
     user = session.get('user') or app.config['DEFAULT_USER']
-
-    db = get_db('pubmedbatch')
-    user_db = db.results.find_one({'user_id':user},{'_id':0})
+    
+    all_users = get_immediate_subdirectories('result')
 
     if request.method == 'POST':
         # time to create a folder
         # first check if the folder already exists. Yes? pass. No? create
         folder = request.form['create-folder']
-
-        user_folders =  [d for d in user_db['folder']]
+        
+        path = os.path.join('result', user)
+        user_folders = get_immediate_subdirectories( path )
         if folder not in user_folders:
-            # set dot.notation
-            user_folder = 'folder.' + folder
-            db.results.update({'user_id':user}, {'$set':{user_folder:{} }})
+            # create folder
+            path = os.path.join(path, folder)
+            os.makedirs( path )
     else:
-        # get folders. If user not exists in pubmed db, create it
-        #print(res)
-        if not user_db:
+        # get folders. If user not exists , create it
+        if user not in all_users:
             # A new user dropping by...
-            print('A "user" is being made in pubmedDB!')
-            db.results.insert({'user_id':user, 'folder':{}})
+            print('A "user" is being made!')
+            path = os.path.join('result', user)
+            os.makedirs( path )
 
     # let's render the template  
-    user_db = db.results.find_one({'user_id':user},{'_id':0})
+    path = os.path.join('result', user)
+    folders = get_immediate_subdirectories( path )
 
     return render_template( 'pubmedbatch_main.html', 
             user = user,
-            folders = [d for d in user_db['folder']]
+            folders = folders
     )
 
 '''
@@ -340,13 +354,13 @@ delete a folder in pubmedbatch
 #@requires_auth
 def pubmedbatch_delfolder(folder):
     user = session.get('user') or app.config['DEFAULT_USER']
-
-    db = get_db('pubmedbatch')
-    user_db = db.results.find_one({'user_id':user},{'_id':0})
-    folders = [d for d in user_db['folder']]
+    
+    path = os.path.join('result', user)
+    folders = get_immediate_subdirectories( path )
+    
     if folder in folders:
-        folder = 'folder.' + folder
-        db.results.update({'user_id':user}, {'$unset': {folder:''}})
+        path = os.path.join(path, folder)
+        shutil.rmtree(path)
         return redirect('/pubmedbatch/')
     else:
         return 'Folder: <b>%s</b> does not exist!' % folder
@@ -551,11 +565,9 @@ def pubmedbatch(folder):
                     output.append(ha)
 
         # save results to folder
-        # if the file name already exists?
-        #folders = db.results.find_one({'user_id':user},{'_id':0})['folder']
-        the_folder = db.results.find_one({
-            'user_id': user},{'_id': 0})['folder'][folder]
-        files = [ f for f in the_folder]
+        # if the file name already exists? name (1)
+        the_folder = os.path.join('result', user, folder)
+        files = get_all_files(the_folder)
         file_name = os.path.splitext(file_name)[0]
         num = 0
         while file_name in files:
@@ -564,18 +576,17 @@ def pubmedbatch(folder):
     
         # get the search term, to display
         search_term = 'AND[ <b>%s</b> ]; OR[ <b>%s</b> ]' % (', '.join(AND), ', '.join(OR))
-        # write to database and win
+        # write to file and win
         final_result = [header, output, search_term]
-        the_file = 'folder.' + folder + '.' + file_name
-        db.results.update({'user_id': user}, {
-            "$set": {the_file: final_result}
-        })
+        path = os.path.join('result', user, folder, file_name)
+        with open(path, 'w') as outfile:
+            json.dump(final_result, outfile)
         return json.dumps([header, output, search_term, file_name])
     else:
         # get. display page
         # First see if folder exists. if not, return error
-        user_folders = db.results.find_one({
-            'user_id': user},{'_id': 0})['folder']
+        path = os.path.join('result',user)
+        user_folders = get_immediate_subdirectories(path) or []
         # get AND an OR field
         AND = session.get('AND') or ''
         OR = session.get('OR') or app.config['PUBMEDBATCH_OR']
@@ -585,7 +596,9 @@ def pubmedbatch(folder):
         if folder not in user_folders:
             return "Error: " + folder + " does not exist!"
         # get the files in the folder to display
-        files = [e for e in user_folders[folder]]
+        path = os.path.join(path, folder)
+        files = get_all_files(path)
+        files.sort()
         return render_template('pubmedbatch.html',
             home_pubmedbatch = home_pubmedbatch,
             files = files,
@@ -608,12 +621,14 @@ def pubmedbatch_rename(folder):
 
     new_name = request.form['new-name']
     old_name = request.form['old-name']
-
+    
     # check if new-name already exists
-    db = get_db('pubmedbatch')
-    the_folder = db.results.find_one({
-            'user_id': user}, {'_id': 0})['folder'][folder]
-    files = [f for f in the_folder]
+    the_folder = os.path.join('result', user, folder)
+    path_new_name = os.path.join(the_folder, new_name)
+    path_old_name = os.path.join(the_folder, old_name)
+    files = get_all_files(the_folder)
+    print old_name
+    print files
     # sanity check
     if new_name in files:
         # throw an error
@@ -624,11 +639,7 @@ def pubmedbatch_rename(folder):
         return '''<span style="color:orange">Oops, the old name: <b>%s</b>
         does not exist in the folder, somehow</span>''' % old_name
     # rename
-    # mongodb doesn't like multiple '$' for the time being,
-    #  so need to find hard index
-    old_name = 'folder.' + folder + '.' + old_name
-    new_name = 'folder.' + folder + '.' + new_name
-    db.results.update({'user_id': user}, {'$rename': {old_name: new_name}})
+    os.rename(path_old_name, path_new_name)
 
     return 'The file has been successfully renamed!'
 
@@ -645,10 +656,8 @@ def pubmedbatch_del(path):
     m = re.search(r'([^/]+)/([^/]+)', path)
     (folder_name, file_name) = m.groups()
     file_name = re.sub('%20', ' ', file_name)
-
-    db = get_db('pubmedbatch')
-    db.results.update({'user_id': user}, {'$unset': {
-                      'folder.%s.%s' % (folder_name, file_name): ''}})
+    file = os.path.join('result', user, folder_name, file_name)
+    os.remove(file)
 
     return '1'
 
@@ -665,12 +674,11 @@ def pubmedbatch_getfile(path):
     m = re.search(r'([^/]+)/([^/]+)', path)
     (folder_name, file_name) = m.groups()
     file_name = re.sub('%20', ' ', file_name)
-    # get file from database
-    db = get_db('pubmedbatch')
-    file = db.results.find_one({'user_id':
-            user})['folder'][folder_name][file_name]
+    # get file
+    file = os.path.join('result', user, folder_name, file_name)
+    content = open(file, 'r').readline()
 
-    return json.dumps(file)
+    return content
 
 
 @app.route('/pubmedbatch_progress_bar/<id>')
