@@ -7,7 +7,7 @@ import pymongo
 import logging
 import sys
 from utils import *
-from urllib2 import HTTPError
+from urllib2 import HTTPError, URLError
 from flask import Flask, request, session, g, redirect, url_for, abort
 from flask import render_template, flash, jsonify, Response, send_from_directory
 from flask.ext.compress import Compress
@@ -32,6 +32,8 @@ import re
 import xml.etree.ElementTree as xml
 import shutil
 from flask.ext.session import Session
+from socket import error as SocketError
+import jinja2
 
 logging.getLogger().addHandler(logging.StreamHandler())
 logging.getLogger().setLevel(logging.INFO)
@@ -54,6 +56,21 @@ sess.init_app(app)
 # read RetNet file
 retnet_f = 'retnet.json'
 RETNET = json.load(open(retnet_f, 'r'))
+
+def highlight(text, list, myclass):
+    # wrap list element in text (case insensitive) with <span>
+    # note that gene description has to be split by ','
+    #  with class to do highlighting
+    for l in list:
+        words = l.split(',')
+        for w in words:
+            # wrap w with parentheses to be a catch group
+            # remove parentheses and its content
+            w = '(%s)' % re.sub(r'\(.*\)', '', w)
+            text = re.sub(w, r'<span class="%s">\1</span>' % myclass, text, flags=re.I)
+    return text
+
+jinja2.filters.FILTERS['highlight'] = highlight
 
 # progressbar
 '''
@@ -210,12 +227,29 @@ check title and abstract is truely relevant. Assign to both this gene and each r
 """
 def scrutinise(obj):
     if obj['lag']:
-        obj['lag'] = obj['lag']/3600/24 # convert it to days
+        obj['lag'] = int(obj['lag']/3600/24) # convert it to days, at least 1 day
+        obj['lag'] = 1 if obj['lag'] < 1 else obj['lag']
             # need to update
-        search_results = Entrez.read(Entrez.esearch(db='pubmed', term=obj['smashed_all'], reldate=obj['lag'], datetype='pdat', usehistory='y'))
+        attempt = 1
+        while attempt <= 10:
+            try:
+                search_results = Entrez.read(Entrez.esearch(db='pubmed', term=obj['smashed_all'], reldate=obj['lag'], datetype='pdat', usehistory='y'))
+                break
+            except URLError as err:
+                print ('!!URLError %s at line 238' % err)
+                time.sleep(2)
+                attempt += 1
     else:
         # just search
-        search_results = Entrez.read(Entrez.esearch(db='pubmed',retmax=50, term=obj['smashed_all'], usehistory='y'))
+        attempt = 1
+        while attempt <= 10:
+            try:
+                search_results = Entrez.read(Entrez.esearch(db='pubmed',retmax=50, term=obj['smashed_all'], usehistory='y'))
+                break
+            except URLError as err:
+                print ('URLError: %s at line 249' % err)
+                time.sleep(2)
+                attempt += 1
     # now done the search. let's get results
     count = int(search_results["Count"])
     print count
@@ -240,6 +274,12 @@ def scrutinise(obj):
             print('Attempt %i of 10' % attempt)
             attempt += 1
             time.sleep(5)
+        except SocketError as err:
+            print('Socket error')
+            time.sleep(2)
+        except URLError as err:
+            print ('URLError')
+            time.sleep(2)
     record = Entrez.parse(handle)
     if peek(record):
         # got something. let's do some calculation
@@ -415,7 +455,12 @@ def pubmedbatch(folder):
             print 'weird, progress id conflict!'
         '''
         '''
-        csvreader = csv.reader(StringIO.StringIO(csv_content), delimiter=',', quotechar='"')
+        # tsv?
+        if 'tsv' in request.form:
+            print 'fuck'
+            csvreader = csv.reader(StringIO.StringIO(csv_content), delimiter='\t', quotechar='"')
+        else:
+            csvreader = csv.reader(StringIO.StringIO(csv_content), delimiter=',', quotechar='"')
         # life time from config
         life = app.config['PUBMEDBATCH_LIFE']
         # number of lines?
@@ -690,6 +735,41 @@ def pubmedbatch_progress(id):
     progress_id = user + id
     return json.dumps(PROGRESS_BAR[progress_id])
 
+@app.route('/test')
+def test():
+    '''
+    random test
+    '''
+    relations = []
+    genes = []
+    omims = []
+    for g, v in RETNET.iteritems():
+        genes.append(g)
+        for o in v['omim']:
+            omims.append(o)
+            relations.extend([(g,o)])
+
+    return render_template('test.html',
+                           relations = json.dumps(relations),
+                           genes = json.dumps(list(set(genes))),
+                           omims = json.dumps(list(set(omims)))
+                           )
+
+
+@app.context_processor
+def utility_processor():
+    def highlight(text, list, myclass):
+        # wrap list element in text (case insensitive) with <span>
+        # note that gene description has to be split by ','
+        #  with class to do highlighting
+        for l in list:
+            words = l.split(',')
+            for w in words:
+                # wrap w with brackets to be a catch group
+                w = '(%s)' % w
+                text = re.sub(w, r"<span class='%s'>\1</span>" % myclass, text, flags=re.I)
+        return text
+    return dict(highlight = highlight)
 
 if __name__ == "__main__":
     home = ''

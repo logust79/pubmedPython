@@ -52,9 +52,11 @@ function displayPubmedTable(data) {
 	color.domain([0, maxi]); //max score is maxi
 
 	var titles = data[0];
-	
+	console.log(titles);
+	console.log(titles.length);
 	var col_width = new Array(data[0].length + 1).join('80 ').split(' ').map(parseFloat); // define width of columns.
 	col_width[0] = col_width[6] = 100;
+	col_width[34] = 300;
 	col_width[2] = 180;
 	var table = d3.select('#table-content').append('table')
 		.attr('class', 'table table-bordered sortable')
@@ -166,7 +168,7 @@ function displayPubmedTable(data) {
         .style('text-overflow', 'ellipsis')
         .style('color', function(d, i){
 			// add color to known genes
-			if (titles[i] == 'HUGO'){
+			if (titles[i] == 'HUGO' || titles[i] == 'SYMBOL'){
 				var pData = d3.select(this.parentNode).datum();
 				if (pData['ref(pubmedID)'].known == 1){
 					return 'green';
