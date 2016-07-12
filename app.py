@@ -755,21 +755,26 @@ def test():
                            omims = json.dumps(list(set(omims)))
                            )
 
-
-@app.context_processor
-def utility_processor():
-    def highlight(text, list, myclass):
-        # wrap list element in text (case insensitive) with <span>
-        # note that gene description has to be split by ','
-        #  with class to do highlighting
-        for l in list:
-            words = l.split(',')
-            for w in words:
-                # wrap w with brackets to be a catch group
-                w = '(%s)' % w
-                text = re.sub(w, r"<span class='%s'>\1</span>" % myclass, text, flags=re.I)
-        return text
-    return dict(highlight = highlight)
+""" JINJA2 filer """
+def highlight(text, list, myclass):
+    # wrap list element in text (case insensitive) with <span>
+    # note that gene description has to be split by ','
+    #  with class to do highlighting
+    for l in list:
+        # remove (.*), escape +?.*
+        l = re.sub(r'\(.*\)', '', l)
+        l = re.sub(r'\+','\\+',l)
+        l = re.sub(r'\?','\\?',l)
+        l = re.sub(r'\.','\\.',l)
+        l = re.sub(r'\*','\\*',l)
+        l = re.sub(r'\[.*\]','',l)
+        l = re.sub(r'\\', '\\\\',l)
+        words = l.split(',')
+        for w in words:
+            # wrap w with brackets to be a catch group
+            text = re.sub(r'(\b%s\b)' % w, r'<span class="%s">\1</span>' % myclass, text, flags=re.I)
+    return text
+jinja2.filters.FILTERS['highlight'] = highlight
 
 if __name__ == "__main__":
     home = ''
